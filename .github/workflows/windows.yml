@@ -28,7 +28,7 @@ jobs:
       # Release builds without debug info: smaller and faster to link on the runner.
       CARGO_PROFILE_RELEASE_DEBUG: "0"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Rust toolchain
         run: |
@@ -93,7 +93,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Get-ChildItem out
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ZIYNAT-${{ steps.version.outputs.version }}-windows-x64
           path: out/*
@@ -101,7 +101,7 @@ jobs:
 
       - name: Release
         if: github.ref_type == 'tag'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: out/*
           name: ZIYNAT ${{ steps.version.outputs.version }}

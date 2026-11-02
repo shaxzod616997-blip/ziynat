@@ -2,7 +2,7 @@
 #   - ZIYNAT-<version>-windows-x64-setup.exe  (installer, Inno Setup)
 #   - ZIYNAT-<version>-windows-x64-portable.zip (unzip and run; settings stay in the folder)
 # Every push to main and every manual run uploads both as workflow artifacts. A tag `v*` also
-# publishes them as a GitHub release.
+# publishes them as a GitHub release, and so does main for the current version.
 name: Windows build
 
 on:
@@ -99,9 +99,23 @@ jobs:
           path: out/*
           retention-days: 30
 
+      # A tag publishes its own release; main keeps the release of the current version
+      # (v<Cargo.toml version>) up to date with the latest build.
       - name: Release
-        if: github.ref_type == 'tag'
+        if: github.ref_type == 'tag' || github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           files: out/*
+          tag_name: v${{ steps.version.outputs.version }}
+          target_commitish: ${{ github.sha }}
           name: ZIYNAT ${{ steps.version.outputs.version }}
+          overwrite_files: true
+          make_latest: true
+          body: |
+            ZIYNAT ${{ steps.version.outputs.version }} for Windows (x64).
+
+            - `ZIYNAT-${{ steps.version.outputs.version }}-windows-x64-setup.exe`: installer
+            - `ZIYNAT-${{ steps.version.outputs.version }}-windows-x64-portable.zip`: unzip and run
+
+            Claude AI: open ZIYNAT, then Edit > Preferences > Integrations > Connect to Claude Desktop.
+            Built from ${{ github.sha }}.

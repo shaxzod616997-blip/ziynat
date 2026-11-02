@@ -1,0 +1,50 @@
+ZIYNAT — rasm muharriri
+=======================
+
+ZIYNAT — qatlamlar, niqoblar, filtrlar, matn, vektor va PSD fayllar bilan ishlaydigan
+rasm muharriri. Internetsiz ishlaydi.
+
+Fayllar
+-------
+  ZIYNAT.exe       — dasturning o'zi
+  ziynat-cli.exe   — buyruq qatori va Claude AI uchun MCP server
+  LICENSE-*, NOTICE, ATTRIBUTION.md — litsenziya (o'chirmang)
+
+
+Claude AI bilan ulash
+---------------------
+1. ZIYNAT'ni oching. Pastki holat qatorida "Claude AI: ready" yozuvi chiqadi.
+2. Edit › Preferences › Integrations (yoki holat qatoridagi yozuvni bosing).
+3. "Connect to Claude Desktop" tugmasini bosing, so'ng Claude Desktop'ni to'liq yopib,
+   qayta oching. Claude'da asboblar ro'yxatida "ziynat" paydo bo'ladi.
+   Claude Code uchun: "Connect to Claude Code" (yoki "Copy Claude Code command" bilan
+   buyruqni nusxalab, terminalda ishga tushiring).
+4. Claude ulanganda holat qatori "Claude AI: connected (1)" bo'ladi.
+
+ZIYNAT yopiq bo'lsa ham, Claude ulanganda u avtomatik ochiladi.
+
+Ruxsatlar (Preferences › Integrations)
+--------------------------------------
+  Allow Agent Control  — Claude ulanishini butunlay yoqish/o'chirish
+  Claude Auto Start    — har ishga tushganda Claude uchun ulanishni ochish
+  Agent Permission     — full: hammasi; editOnly: tahrirlash mumkin, lekin fayl ochish,
+                         saqlash, eksport, chop etish va dasturni yopish mumkin emas;
+                         readOnly: faqat ko'rish (holat, ro'yxat, skrinshot)
+  Blocked Commands     — Claude hech qachon bajara olmaydigan buyruqlar, vergul bilan:
+                         masalan  file.print, filter.*, edit.preferences.
+  Read Folder / Write Folder — Claude fayl o'qishi / yozishi mumkin bo'lgan papkalar
+                         (bo'sh = ruxsat yo'q)
+
+Xavfsizlik: ulanish faqat shu kompyuter ichida (127.0.0.1) ishlaydi va 256-bitli maxfiy
+token bilan himoyalangan. Token fayli sozlamalar papkasida: claude-control.token.
+Claude o'z ruxsatlarini (Integrations bo'limini) o'zgartira olmaydi.
+
+Portable versiya
+----------------
+portable.zip ichidagi portable.txt fayli bor bo'lsa, barcha sozlamalar dastur papkasidagi
+ZiynatData papkasida saqlanadi (fleshkada olib yurish uchun qulay).
+
+Litsenziya
+----------
+ZIYNAT ochiq kodli PhotoCraft (https://github.com/storytold/photocraft) asosida yaratilgan,
+MIT yoki Apache-2.0 litsenziyasi ostida. Asl mualliflik ma'lumotlari NOTICE faylida.

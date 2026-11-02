@@ -1,0 +1,12 @@
+ZIYNAT app icon (photocraft.svg, photocraft-small.svg and every file derived from them in
+this directory: photocraft-1024.png, photocraft.icns, photocraft.ico, hicolor/).
+
+Original artwork made for ZIYNAT: an eight-pointed girih star in the colours of Samarkand
+tilework (lapis blue, gold, turquoise). No third-party material. Licensed like the rest of the
+project, under either of
+
+  * Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0)
+  * MIT license (https://opensource.org/licenses/MIT)
+
+at your option. The file names keep the upstream PhotoCraft names so the build scripts need no
+changes.

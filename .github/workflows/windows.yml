@@ -1,0 +1,107 @@
+# ZIYNAT for Windows: builds ZIYNAT.exe and ziynat-cli.exe, then packs
+#   - ZIYNAT-<version>-windows-x64-setup.exe  (installer, Inno Setup)
+#   - ZIYNAT-<version>-windows-x64-portable.zip (unzip and run; settings stay in the folder)
+# Every push to main and every manual run uploads both as workflow artifacts. A tag `v*` also
+# publishes them as a GitHub release.
+name: Windows build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 120
+    env:
+      CARGO_TERM_COLOR: always
+      CARGO_INCREMENTAL: "0"
+      # Release builds without debug info: smaller and faster to link on the runner.
+      CARGO_PROFILE_RELEASE_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rust toolchain
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustc --version
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ziynat-windows
+
+      - name: Version
+        id: version
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path Cargo.toml -Pattern '^version\s*=\s*"([^"]+)"' | Select-Object -First 1).Matches[0].Groups[1].Value
+          if ("${{ github.ref_type }}" -eq "tag") { $v = "${{ github.ref_name }}".TrimStart("v") }
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Build
+        env:
+          PHOTOCRAFT_REQUIRE_WINRES: "1"
+        run: cargo build --release --locked -p photocraft -p photocraft-cli --features photocraft/heif,photocraft-cli/heif
+
+      - name: Test the Claude AI integration
+        run: cargo test --release --locked -p photocraft-automation --lib launch
+
+      - name: Stage files
+        shell: pwsh
+        run: |
+          $stage = "dist/ZIYNAT"
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          Copy-Item target/release/photocraft.exe "$stage/ZIYNAT.exe"
+          Copy-Item target/release/photocraft-cli.exe "$stage/ziynat-cli.exe"
+          Copy-Item LICENSE-MIT, LICENSE-APACHE, NOTICE, ATTRIBUTION.md $stage
+          Copy-Item packaging/windows/ziynat/QOLLANMA.txt $stage
+          Get-ChildItem $stage
+
+      - name: Smoke test
+        shell: pwsh
+        run: |
+          dist/ZIYNAT/ziynat-cli.exe --version
+          dist/ZIYNAT/ziynat-cli.exe mcp --help | Select-String "launch-app"
+
+      - name: Portable zip
+        shell: pwsh
+        run: |
+          $v = "${{ steps.version.outputs.version }}"
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+          Copy-Item -Recurse dist/ZIYNAT dist/portable
+          Copy-Item packaging/windows/portable.txt dist/portable/portable.txt
+          Compress-Archive -Path dist/portable/* -DestinationPath "out/ZIYNAT-$v-windows-x64-portable.zip"
+
+      - name: Installer
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup -y --no-progress
+          }
+          & $iscc /DAppVersion=${{ steps.version.outputs.version }} /DSourceDir="$PWD\dist\ZIYNAT" /DIconFile="$PWD\assets\app-icon\photocraft.ico" /O"$PWD\out" packaging\windows\ziynat\ziynat.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ZIYNAT-${{ steps.version.outputs.version }}-windows-x64
+          path: out/*
+          retention-days: 30
+
+      - name: Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/*
+          name: ZIYNAT ${{ steps.version.outputs.version }}

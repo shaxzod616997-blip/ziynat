@@ -383,13 +383,22 @@ pub enum State {
     Connected(usize),
 }
 
+/// A client that made a request this recently (seconds) is shown as connected.
+const RECENT_S: u64 = 300;
+
 pub fn state() -> State {
     match current() {
         None => State::Off,
-        Some(_) => match STATS.snapshot().connections {
-            0 => State::Ready,
-            n => State::Connected(n),
-        },
+        // The bridge reconnects per request after the app closes an idle connection, so a
+        // client that asked something in the last few minutes still counts as connected.
+        Some(_) => {
+            let snap = STATS.snapshot();
+            match snap.connections {
+                0 if snap.idle_s.is_some_and(|s| s < RECENT_S) => State::Connected(1),
+                0 => State::Ready,
+                n => State::Connected(n),
+            }
+        }
     }
 }
 
@@ -422,14 +431,15 @@ pub fn status(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
     let state = state();
     let snap = STATS.snapshot();
-    let resp = ui
-        .horizontal(|ui| {
-            ui.spacing_mut().item_spacing.x = 4.0;
-            dot(ui, state_color(state, &t));
-            ui.label(RichText::new(state_text(state)).color(t.text_dim).size(12.0));
-        })
-        .response
-        .interact(Sense::click());
+    let text = state_text(state);
+    let galley = ui.painter().layout_no_wrap(text, egui::FontId::proportional(12.0), t.text_dim);
+    let size = vec2(galley.size().x + 16.0, galley.size().y.max(14.0));
+    let (rect, resp) = ui.allocate_exact_size(size, Sense::click());
+    if resp.hovered() {
+        ui.painter().rect_filled(rect.expand(2.0), t.radius_sm, t.hover);
+    }
+    ui.painter().circle_filled(egui::pos2(rect.left() + 5.0, rect.center().y), 4.0, state_color(state, &t));
+    ui.painter().galley(egui::pos2(rect.left() + 14.0, rect.center().y - galley.size().y / 2.0), galley, t.text_dim);
     let tip = crate::i18n::fmt(
         tl!("{requests} requests from Claude, {denied} refused. Click for Claude AI settings."),
         &[("requests", &snap.requests.to_string()), ("denied", &snap.denied.to_string())],
